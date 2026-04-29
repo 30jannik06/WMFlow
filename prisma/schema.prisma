@@ -1,0 +1,152 @@
+// wmflow — Prisma Schema (PostgreSQL)
+// Verwendung: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================
+// TEAMS
+// =====================
+model Team {
+  id        String   @id @default(cuid())
+  fifaCode  String   @unique // "GER", "BRA", "USA" etc.
+  nameDe    String
+  nameEn    String
+  flagUrl   String
+  groupCode String   // "A" - "L" (12 Gruppen bei 48 Teams)
+  
+  homeMatches    Match[] @relation("HomeTeam")
+  awayMatches    Match[] @relation("AwayTeam")
+  wonMatches     Match[] @relation("Winner")
+  groupStandings GroupStanding[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([groupCode])
+}
+
+// =====================
+// MATCHES
+// =====================
+enum MatchStatus {
+  scheduled
+  live
+  finished
+  postponed
+  cancelled
+}
+
+enum MatchPhase {
+  group
+  r32      // 1/16 Achtelfinale
+  r16      // 1/8
+  qf       // Viertelfinale
+  sf       // Halbfinale
+  third    // Spiel um Platz 3
+  final
+}
+
+model Match {
+  id         String      @id @default(cuid())
+  matchNumber Int        @unique // Offizielle FIFA-Spielnummer (1-104)
+  status     MatchStatus @default(scheduled)
+  phase      MatchPhase
+  
+  // Zeit & Ort — IMMER UTC speichern, Frontend konvertiert
+  kickoffUtc DateTime
+  venue      String
+  city       String
+  
+  // Teams — können null sein wenn noch nicht ermittelt (K.O.-Phase)
+  homeTeamId String?
+  awayTeamId String?
+  homeTeam   Team?   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team?   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  
+  // Platzhalter für noch unbekannte Teams ("Sieger Gruppe A", "Verlierer SF1")
+  homePlaceholder String?
+  awayPlaceholder String?
+  
+  // Ergebnis
+  homeScore        Int?
+  awayScore        Int?
+  homePenaltyScore Int?
+  awayPenaltyScore Int?
+  wentToExtraTime  Boolean @default(false)
+  wentToPenalties  Boolean @default(false)
+  
+  winnerId String?
+  winner   Team?   @relation("Winner", fields: [winnerId], references: [id])
+  
+  // Auto-Progression: wohin wandert der Sieger?
+  nextMatchId String?
+  nextMatch   Match?  @relation("NextMatch", fields: [nextMatchId], references: [id])
+  prevMatches Match[] @relation("NextMatch")
+  nextSlot    String? // "home" oder "away"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([phase])
+  @@index([status])
+  @@index([kickoffUtc])
+}
+
+// =====================
+// GROUP STANDINGS (live berechnet, gecached)
+// =====================
+model GroupStanding {
+  id          String @id @default(cuid())
+  groupCode   String
+  teamId      String
+  team        Team   @relation(fields: [teamId], references: [id])
+  
+  position    Int
+  played      Int    @default(0)
+  won         Int    @default(0)
+  drawn       Int    @default(0)
+  lost        Int    @default(0)
+  goalsFor    Int    @default(0)
+  goalsAgainst Int   @default(0)
+  goalDiff    Int    @default(0)
+  points      Int    @default(0)
+  
+  updatedAt DateTime @updatedAt
+  
+  @@unique([groupCode, teamId])
+  @@index([groupCode, position])
+}
+
+// =====================
+// ADMIN (Discord-OAuth Whitelist)
+// =====================
+model Admin {
+  id         String   @id @default(cuid())
+  discordId  String   @unique
+  name       String
+  createdAt  DateTime @default(now())
+}
+
+// =====================
+// NEWSLETTER (Lead-Gen Phase 1)
+// =====================
+model NewsletterSubscriber {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  locale          String    @default("de") // "de" | "en"
+  confirmed       Boolean   @default(false) // Double-Opt-In
+  confirmToken    String?   @unique
+  confirmedAt     DateTime?
+  unsubscribedAt  DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([confirmed])
+}
