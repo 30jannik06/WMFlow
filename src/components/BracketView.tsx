@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+
 // Visual tournament bracket — 5 rounds left→right, SVG connectors
 // Layout maths: SLOT_H doubles each round so cards stay vertically centred
 
@@ -57,13 +61,11 @@ function Connector({ roundIndex }: { roundIndex: number }) {
 
   for (let i = 0; i < count; i++) {
     const y = midY(roundIndex, i);
-    // horizontal stub from card right to halfway
     paths.push(`M 0 ${y} H ${halfX}`);
 
     if (i % 2 === 0 && i + 1 < count) {
       const y2 = midY(roundIndex, i + 1);
       const yMid = midY(roundIndex + 1, Math.floor(i / 2));
-      // vertical join + horizontal into next card
       paths.push(`M ${halfX} ${y} V ${y2} M ${halfX} ${yMid} H ${CONN_W}`);
     }
   }
@@ -83,6 +85,50 @@ function Connector({ roundIndex }: { roundIndex: number }) {
         className="text-[var(--ink)]/20"
       />
     </svg>
+  );
+}
+
+// ── animated team slot ────────────────────────────────────────
+function TeamSlot({
+  name,
+  flagUrl,
+  won,
+  score,
+  played,
+}: {
+  name: string;
+  flagUrl: string | undefined;
+  won: boolean;
+  score: number | null | undefined;
+  played: boolean;
+}) {
+  return (
+    <div className={`flex-1 flex items-center gap-1.5 px-2 min-w-0 ${won ? "bg-[var(--accent)]/15" : ""}`}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={name}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 10 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+          className="flex items-center gap-1.5 min-w-0 flex-1"
+        >
+          {flagUrl ? (
+            <span className={`fi fi-${flagUrl} flex-shrink-0`} style={{ fontSize: 12 }} />
+          ) : (
+            <span className="w-4 h-2.5 bg-[var(--ink)]/10 rounded-sm flex-shrink-0" />
+          )}
+          <span className={`text-[11px] truncate flex-1 ${won ? "font-bold" : "text-[var(--ink)]/70"}`}>
+            {name}
+          </span>
+        </motion.div>
+      </AnimatePresence>
+      {played && (
+        <span className={`text-[11px] font-mono flex-shrink-0 ${won ? "font-bold" : ""}`}>
+          {score}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -116,42 +162,23 @@ function BracketCard({
       style={{ position: "absolute", top, left: 0, width: COL_W, height: CARD_H }}
       className={`${ring} bg-[var(--paper)] rounded-sm overflow-hidden flex flex-col`}
     >
-      {/* Home */}
-      <div className={`flex-1 flex items-center gap-1.5 px-2 min-w-0 ${homeWon ? "bg-[var(--accent)]/15" : ""}`}>
-        {homeFlagUrl ? (
-          <span className={`fi fi-${homeFlagUrl} flex-shrink-0`} style={{ fontSize: 12 }} />
-        ) : (
-          <span className="w-4 h-2.5 bg-[var(--ink)]/10 rounded-sm flex-shrink-0" />
-        )}
-        <span className={`text-[11px] truncate flex-1 ${homeWon ? "font-bold" : "text-[var(--ink)]/70"}`}>
-          {homeName}
-        </span>
-        {played && (
-          <span className={`text-[11px] font-mono flex-shrink-0 ${homeWon ? "font-bold" : ""}`}>
-            {match?.homeScore}
-          </span>
-        )}
-      </div>
+      <TeamSlot
+        name={homeName}
+        flagUrl={homeFlagUrl}
+        won={homeWon}
+        score={match?.homeScore}
+        played={played}
+      />
 
-      {/* Divider */}
       <div className="h-px bg-[var(--ink)]/8 mx-1.5" />
 
-      {/* Away */}
-      <div className={`flex-1 flex items-center gap-1.5 px-2 min-w-0 ${awayWon ? "bg-[var(--accent)]/15" : ""}`}>
-        {awayFlagUrl ? (
-          <span className={`fi fi-${awayFlagUrl} flex-shrink-0`} style={{ fontSize: 12 }} />
-        ) : (
-          <span className="w-4 h-2.5 bg-[var(--ink)]/10 rounded-sm flex-shrink-0" />
-        )}
-        <span className={`text-[11px] truncate flex-1 ${awayWon ? "font-bold" : "text-[var(--ink)]/70"}`}>
-          {awayName}
-        </span>
-        {played && (
-          <span className={`text-[11px] font-mono flex-shrink-0 ${awayWon ? "font-bold" : ""}`}>
-            {match?.awayScore}
-          </span>
-        )}
-      </div>
+      <TeamSlot
+        name={awayName}
+        flagUrl={awayFlagUrl}
+        won={awayWon}
+        score={match?.awayScore}
+        played={played}
+      />
     </div>
   );
 }
@@ -211,8 +238,14 @@ export default function BracketView({
   matchByNum: Record<number, Match>;
   thirdPlace: Match | undefined;
 }) {
-  const totalWidth =
-    ROUNDS.length * COL_W + (ROUNDS.length - 1) * CONN_W;
+  const router = useRouter();
+
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 30_000);
+    return () => clearInterval(id);
+  }, [router]);
+
+  const totalWidth = ROUNDS.length * COL_W + (ROUNDS.length - 1) * CONN_W;
 
   return (
     <div>

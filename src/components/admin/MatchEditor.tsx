@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { updateMatchResult, resetMatch } from "@/actions/admin";
 import type { Match, Team } from "@/generated/prisma";
 
@@ -20,6 +21,7 @@ export default function MatchEditor({ match }: { match: MatchWithTeams }) {
   const [penalties, setPenalties] = useState(match.wentToPenalties);
   const [winnerId, setWinnerId] = useState(match.winnerId ?? "");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const isGroup = match.phase === "group";
   const isFinished = match.status === "finished";
@@ -39,6 +41,19 @@ export default function MatchEditor({ match }: { match: MatchWithTeams }) {
       if (hs > as) computedWinnerId = match.homeTeamId ?? "";
       else if (as > hs) computedWinnerId = match.awayTeamId ?? "";
       else computedWinnerId = "";
+    } else {
+      // KO: auto-compute from score; penalties → use penalty goals
+      if (!penalties) {
+        if (hs > as) computedWinnerId = match.homeTeamId ?? "";
+        else if (as > hs) computedWinnerId = match.awayTeamId ?? "";
+      } else {
+        const hp = parseInt(homePen);
+        const ap = parseInt(awayPen);
+        if (!isNaN(hp) && !isNaN(ap)) {
+          if (hp > ap) computedWinnerId = match.homeTeamId ?? "";
+          else if (ap > hp) computedWinnerId = match.awayTeamId ?? "";
+        }
+      }
     }
 
     startTransition(async () => {
@@ -52,6 +67,7 @@ export default function MatchEditor({ match }: { match: MatchWithTeams }) {
         winnerId: computedWinnerId || undefined,
       });
       setOpen(false);
+      router.refresh();
     });
   }
 
@@ -65,6 +81,7 @@ export default function MatchEditor({ match }: { match: MatchWithTeams }) {
       setExtraTime(false);
       setPenalties(false);
       setWinnerId("");
+      router.refresh();
     });
   }
 
@@ -210,22 +227,6 @@ export default function MatchEditor({ match }: { match: MatchWithTeams }) {
                 </div>
               )}
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-[var(--muted)]">Sieger</label>
-                <select
-                  value={winnerId}
-                  onChange={(e) => setWinnerId(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/15 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                >
-                  <option value="">— Sieger auswählen —</option>
-                  {match.homeTeam && (
-                    <option value={match.homeTeamId!}>{homeName}</option>
-                  )}
-                  {match.awayTeam && (
-                    <option value={match.awayTeamId!}>{awayName}</option>
-                  )}
-                </select>
-              </div>
             </div>
           )}
 

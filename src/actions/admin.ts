@@ -57,7 +57,7 @@ export async function updateMatchResult(
 export async function resetMatch(matchId: string) {
   await requireAdmin();
 
-  await prisma.match.update({
+  const match = await prisma.match.update({
     where: { id: matchId },
     data: {
       homeScore: null,
@@ -69,7 +69,21 @@ export async function resetMatch(matchId: string) {
       winnerId: null,
       status: "scheduled",
     },
+    include: { homeTeam: true, awayTeam: true },
   });
+
+  // KO-Reset: nächsten Slot leeren
+  if (match.nextMatchId && match.nextSlot) {
+    await prisma.match.update({
+      where: { id: match.nextMatchId },
+      data: match.nextSlot === "home" ? { homeTeamId: null } : { awayTeamId: null },
+    });
+  }
+
+  // Gruppen-Reset: Standings neu berechnen, R32-Slot leeren
+  if (match.phase === "group" && match.homeTeam && match.awayTeam) {
+    await recalculateGroupStandings(match.homeTeam.groupCode);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/gruppen");
@@ -161,4 +175,36 @@ async function recalculateGroupStandings(groupCode: string) {
       })
     )
   );
+
+  // Wenn alle 6 Gruppenspiele fertig: 1. + 2. Platz in R32 eintragen
+  if (groupMatches.length === 6) {
+    await advanceGroupToR32(groupCode, sorted[0]?.id, sorted[1]?.id);
+  }
+}
+
+async function advanceGroupToR32(
+  groupCode: string,
+  firstId: string | undefined,
+  secondId: string | undefined
+) {
+  const r32Matches = await prisma.match.findMany({ where: { phase: "r32" } });
+
+  const updates: Promise<unknown>[] = [];
+
+  for (const match of r32Matches) {
+    if (firstId) {
+      if (match.homePlaceholder === `1. Gruppe ${groupCode}`)
+        updates.push(prisma.match.update({ where: { id: match.id }, data: { homeTeamId: firstId } }));
+      if (match.awayPlaceholder === `1. Gruppe ${groupCode}`)
+        updates.push(prisma.match.update({ where: { id: match.id }, data: { awayTeamId: firstId } }));
+    }
+    if (secondId) {
+      if (match.homePlaceholder === `2. Gruppe ${groupCode}`)
+        updates.push(prisma.match.update({ where: { id: match.id }, data: { homeTeamId: secondId } }));
+      if (match.awayPlaceholder === `2. Gruppe ${groupCode}`)
+        updates.push(prisma.match.update({ where: { id: match.id }, data: { awayTeamId: secondId } }));
+    }
+  }
+
+  await Promise.all(updates);
 }
