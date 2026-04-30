@@ -322,6 +322,67 @@ async function main() {
     });
   }
   console.log(`✓ ${KO_MATCHES.length} KO-Spiele angelegt`);
+
+  // ============================================================
+  // nextMatchId WIRING — Bracket Auto-Advancement
+  // Abgeleitet aus den Platzhaltern der KO_MATCHES oben.
+  // ============================================================
+  console.log("🔗 Verknüpfe Bracket (nextMatchId)...");
+
+  const allMatches = await prisma.match.findMany({ select: { id: true, matchNumber: true } });
+  const matchByNum = new Map(allMatches.map((m) => [m.matchNumber, m.id]));
+
+  // Nur Winner-Pfade; Verlierer SF → Platz 3 hat kein nextMatchId im Schema
+  const NEXT: { from: number; to: number; slot: "home" | "away" }[] = [
+    // R32 → R16
+    { from:  73, to:  90, slot: "home" },
+    { from:  74, to:  89, slot: "home" },
+    { from:  75, to:  90, slot: "away" },
+    { from:  76, to:  91, slot: "home" },
+    { from:  77, to:  89, slot: "away" },
+    { from:  78, to:  91, slot: "away" },
+    { from:  79, to:  92, slot: "home" },
+    { from:  80, to:  92, slot: "away" },
+    { from:  81, to:  94, slot: "home" },
+    { from:  82, to:  94, slot: "away" },
+    { from:  83, to:  93, slot: "home" },
+    { from:  84, to:  93, slot: "away" },
+    { from:  85, to:  96, slot: "home" },
+    { from:  86, to:  95, slot: "home" },
+    { from:  87, to:  96, slot: "away" },
+    { from:  88, to:  95, slot: "away" },
+    // R16 → QF
+    { from:  89, to:  97, slot: "home" },
+    { from:  90, to:  97, slot: "away" },
+    { from:  91, to:  99, slot: "home" },
+    { from:  92, to:  99, slot: "away" },
+    { from:  93, to:  98, slot: "home" },
+    { from:  94, to:  98, slot: "away" },
+    { from:  95, to: 100, slot: "home" },
+    { from:  96, to: 100, slot: "away" },
+    // QF → SF
+    { from:  97, to: 101, slot: "home" },
+    { from:  98, to: 101, slot: "away" },
+    { from:  99, to: 102, slot: "home" },
+    { from: 100, to: 102, slot: "away" },
+    // SF → Finale
+    { from: 101, to: 104, slot: "home" },
+    { from: 102, to: 104, slot: "away" },
+  ];
+
+  for (const { from, to, slot } of NEXT) {
+    const fromId = matchByNum.get(from);
+    const toId   = matchByNum.get(to);
+    if (!fromId || !toId) {
+      console.error(`⚠ Spiel nicht gefunden: ${from} → ${to}`);
+      continue;
+    }
+    await prisma.match.update({
+      where: { id: fromId },
+      data:  { nextMatchId: toId, nextSlot: slot },
+    });
+  }
+  console.log(`✓ ${NEXT.length} Bracket-Verbindungen gesetzt`);
   console.log("✅ Seed abgeschlossen!");
 }
 
