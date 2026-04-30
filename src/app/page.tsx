@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, type MotionValue } from "framer-motion";
 
 // ==========================================
 // CONFIG
@@ -35,7 +35,8 @@ function useCountdown(target: Date) {
     const [now, setNow] = useState<Date | null>(null);
 
     useEffect(() => {
-        setNow(new Date()); // Hydration-safe
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setNow(new Date()); // Hydration-safe: avoids SSR/client mismatch
         const id = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(id);
     }, []);
@@ -101,7 +102,7 @@ function FloatingFlag({
     x: string;
     y: string;
     delay: number;
-    scrollY: any;
+    scrollY: MotionValue<number>;
 }) {
     const yOffset = useTransform(scrollY, [0, 1], [0, -150 - delay * 40]);
     const opacity = useTransform(scrollY, [0, 0.6, 1], [1, 0.7, 0]);
@@ -480,7 +481,7 @@ export default function LandingPage() {
                             Sei dabei,
                             <br />
                             <span className="italic text-[var(--accent)]">
-                                wenn's losgeht.
+                                wenn&apos;s losgeht.
                             </span>
                         </h2>
                         <p className="text-lg text-[var(--paper)]/70 mb-10 max-w-xl mx-auto">
