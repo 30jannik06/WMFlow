@@ -160,14 +160,6 @@ export default function LandingPage() {
     const heroScale = useTransform(smoothScroll, [0, 1], [1, 1.1]);
 
     const countdown = useCountdown(WM_KICKOFF);
-    const [email, setEmail] = useState("");
-    const [submitted, setSubmitted] = useState(false);
-
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        // TODO: POST an /api/newsletter
-        setSubmitted(true);
-    }
 
     return (
         <main className="relative bg-[var(--paper)] text-[var(--ink)]">
@@ -388,11 +380,46 @@ export default function LandingPage() {
                                 >
                                     Spielplan →
                                 </Link>
+                                <Link
+                                    href="/stadien"
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[var(--paper)]/40 text-[var(--paper)] font-bold text-sm hover:bg-[var(--paper)]/10 transition-colors"
+                                >
+                                    Stadien →
+                                </Link>
                             </div>
                         </motion.div>
                     </motion.div>
                 </motion.div>
             </section>
+
+            {/* ===========================================
+          STATS STRIP — Infinite Marquee
+          =========================================== */}
+            <div className="bg-[var(--accent)] text-[var(--ink)] py-3 overflow-hidden select-none">
+              <div className="flex animate-marquee whitespace-nowrap">
+                {[...Array(2)].map((_, i) => (
+                  <span key={i} className="flex items-center gap-0 shrink-0">
+                    {[
+                      "48 Teams",
+                      "104 Spiele",
+                      "16 Stadien",
+                      "3 Länder",
+                      "6 Kontinente",
+                      "11. Juni 2026",
+                      "FIFA World Cup",
+                      "USA · Kanada · Mexiko",
+                    ].map((item) => (
+                      <span key={item} className="flex items-center">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-[0.2em] px-6">
+                          {item}
+                        </span>
+                        <span className="text-[var(--ink)]/40 text-xs">·</span>
+                      </span>
+                    ))}
+                  </span>
+                ))}
+              </div>
+            </div>
 
             {/* ===========================================
           FEATURES SECTION
@@ -456,80 +483,133 @@ export default function LandingPage() {
             </section>
 
             {/* ===========================================
-          NEWSLETTER / LEAD-GEN
+          TURNIER-TIMELINE
           =========================================== */}
-            <section className="relative py-32 px-6 bg-[var(--ink)] text-[var(--paper)] overflow-hidden">
-                {/* Decorative Number */}
-                <div
-                    aria-hidden
-                    className="absolute -right-10 -top-20 font-display text-[40rem] font-black leading-none text-[var(--paper)]/5 select-none pointer-events-none"
+            <section className="py-24 px-6 bg-[var(--ink)] text-[var(--paper)] overflow-hidden">
+              <div className="max-w-6xl mx-auto">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7 }}
+                  className="mb-14"
                 >
-                    26
-                </div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--accent)] mb-3">
+                    Turnierplan
+                  </div>
+                  <h2 className="font-display text-4xl md:text-6xl font-black leading-[0.95]">
+                    11. Juni – 19. Juli 2026
+                  </h2>
+                </motion.div>
 
-                <div className="relative max-w-3xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                {/* Timeline */}
+                <div className="relative">
+                  {/* Horizontal line */}
+                  <div className="hidden md:block absolute top-[22px] left-0 right-0 h-px bg-[var(--paper)]/15" />
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-4">
+                    {[
+                      { phase: "Gruppenphase",   dates: "11.–27. Juni",    matches: 72, color: "var(--paper)" },
+                      { phase: "Runde der 32",   dates: "28. Juni–4. Juli",matches: 16, color: "var(--paper)" },
+                      { phase: "Achtelfinale",   dates: "5.–8. Juli",      matches: 8,  color: "var(--paper)" },
+                      { phase: "Viertelfinale",  dates: "10.–11. Juli",    matches: 4,  color: "var(--paper)" },
+                      { phase: "Halbfinale",     dates: "14.–15. Juli",    matches: 2,  color: "var(--paper)" },
+                      { phase: "Finale",         dates: "19. Juli",         matches: 1,  color: "var(--accent)" },
+                    ].map((item, i) => (
+                      <motion.div
+                        key={item.phase}
+                        initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--accent)] mb-6">
-                            · Nichts verpassen ·
+                        transition={{ delay: i * 0.08, duration: 0.5 }}
+                        className="relative"
+                      >
+                        {/* Dot */}
+                        <div
+                          className="w-[10px] h-[10px] rounded-full mb-5 border-2"
+                          style={{
+                            backgroundColor: item.color === "var(--accent)" ? "var(--accent)" : "transparent",
+                            borderColor: item.color === "var(--accent)" ? "var(--accent)" : "rgba(244,237,224,0.3)",
+                          }}
+                        />
+                        <div
+                          className="text-[10px] font-mono uppercase tracking-[0.15em] mb-1.5"
+                          style={{ color: item.color === "var(--accent)" ? "var(--accent)" : "rgba(244,237,224,0.5)" }}
+                        >
+                          {item.dates}
                         </div>
-                        <h2 className="font-display text-5xl md:text-7xl font-black leading-[0.95] mb-8">
-                            Sei dabei,
-                            <br />
-                            <span className="italic text-[var(--accent)]">
-                                wenn&apos;s losgeht.
-                            </span>
-                        </h2>
-                        <p className="text-lg text-[var(--paper)]/70 mb-10 max-w-xl mx-auto">
-                            Wir melden uns zum Launch — kein Spam, keine
-                            Werbung, nur ein Update wenn wmflow live ist.
-                        </p>
-
-                        {!submitted ? (
-                            <form
-                                onSubmit={handleSubmit}
-                                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-                            >
-                                <input
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="deine@email.de"
-                                    className="flex-1 px-5 py-4 rounded-full bg-transparent border-2 border-[var(--paper)]/30 focus:border-[var(--accent)] outline-none transition-colors text-[var(--paper)] placeholder:text-[var(--paper)]/40"
-                                />
-                                <button
-                                    type="submit"
-                                    className="px-7 py-4 rounded-full bg-[var(--accent)] text-[var(--ink)] font-bold hover:bg-[var(--paper)] transition-colors"
-                                >
-                                    Anmelden →
-                                </button>
-                            </form>
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="inline-block px-7 py-4 rounded-full bg-[var(--accent)] text-[var(--ink)] font-bold"
-                            >
-                                ✓ Check dein Postfach für die Bestätigung
-                            </motion.div>
-                        )}
-
-                        <p className="mt-6 text-xs text-[var(--paper)]/40">
-                            Mit dem Klick stimmst du der Datenschutzerklärung
-                            zu. Abmeldung jederzeit möglich.
-                        </p>
-                    </motion.div>
+                        <div
+                          className="font-display text-lg font-black leading-tight mb-1"
+                          style={{ color: item.color === "var(--accent)" ? "var(--accent)" : "var(--paper)" }}
+                        >
+                          {item.phase}
+                        </div>
+                        <div className="text-[11px] font-mono text-[var(--paper)]/30">
+                          {item.matches} {item.matches === 1 ? "Spiel" : "Spiele"}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
+              </div>
             </section>
 
             {/* FOOTER */}
-            <footer className="py-12 px-6 text-center text-xs font-mono text-[var(--muted)]">
-                wmflow · v0.1 · Pre-Launch · {new Date().getFullYear()}
+            <footer className="bg-[var(--ink)] text-[var(--paper)] px-6 pt-20 pb-10 overflow-hidden relative">
+                {/* Big background wordmark */}
+                <div
+                    aria-hidden
+                    className="absolute bottom-0 left-0 right-0 font-display font-black leading-none text-[var(--paper)]/[0.03] select-none pointer-events-none text-center"
+                    style={{ fontSize: "clamp(6rem, 20vw, 18rem)" }}
+                >
+                    wmflow
+                </div>
+
+                <div className="relative max-w-6xl mx-auto">
+                    {/* Top row */}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-12">
+                        {/* Brand */}
+                        <div>
+                            <div className="font-display text-5xl md:text-7xl font-black leading-none tracking-tight mb-3">
+                                wm<span className="text-[var(--accent)]">flow</span>
+                            </div>
+                            <p className="text-[var(--paper)]/40 text-sm font-mono max-w-xs">
+                                FIFA World Cup 2026 · Live-Tracker für Gruppen,
+                                Spielplan &amp; Bracket.
+                            </p>
+                        </div>
+
+                        {/* Nav */}
+                        <nav className="flex flex-wrap gap-x-8 gap-y-3">
+                            {[
+                                { href: "/gruppen", label: "Gruppen" },
+                                { href: "/spiele",  label: "Spielplan" },
+                                { href: "/bracket", label: "KO-Runden" },
+                                { href: "/stadien", label: "Stadien" },
+                            ].map(({ href, label }) => (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--paper)]/50 hover:text-[var(--accent)] transition-colors"
+                                >
+                                    {label}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-[var(--paper)]/10 mb-8" />
+
+                    {/* Bottom row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[11px] font-mono text-[var(--paper)]/25">
+                        <span>© {new Date().getFullYear()} wmflow · Kein offizielles FIFA-Produkt.</span>
+                        <span className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+                            USA · Kanada · Mexiko · 11. Juni – 19. Juli 2026
+                        </span>
+                    </div>
+                </div>
             </footer>
         </main>
     );

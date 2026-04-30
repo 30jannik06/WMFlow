@@ -88,6 +88,12 @@ export default async function BracketPage() {
           <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--ink)] border border-[var(--ink)] px-3 py-1.5 rounded-sm">
             KO-Runden
           </span>
+          <Link
+            href="/stadien"
+            className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-3 py-1.5 rounded-sm hover:border-[var(--ink)]/50"
+          >
+            Stadien
+          </Link>
         </div>
 
         <BracketView matchByNum={matchByNum} thirdPlace={thirdPlace} />

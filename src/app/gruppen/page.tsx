@@ -59,6 +59,12 @@ export default async function GruppenPage() {
           >
             KO-Runden
           </Link>
+          <Link
+            href="/stadien"
+            className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-3 py-1.5 rounded-sm hover:border-[var(--ink)]/50"
+          >
+            Stadien
+          </Link>
         </div>
 
         <GroupGrid groups={groups} />
