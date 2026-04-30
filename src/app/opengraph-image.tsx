@@ -44,7 +44,7 @@ export default function OgImage() {
             48 Teams · 104 Spiele · 3 Länder
           </div>
           <div style={{ background: "#d4ff3d", color: "#0a1628", padding: "12px 28px", borderRadius: "100px", fontSize: "16px", fontWeight: 700, letterSpacing: "0.05em" }}>
-            wmflow.de
+            wmflow.online
           </div>
         </div>
       </div>
