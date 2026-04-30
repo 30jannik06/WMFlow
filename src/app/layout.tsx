@@ -6,6 +6,9 @@ import "flag-icons/css/flag-icons.min.css";
 export const metadata: Metadata = {
   title: "wmflow — WM 2026",
   description: "48 Teams. 104 Spiele. Drei Länder. Verfolge die WM 2026 in Echtzeit.",
+  verification: {
+    google: "62_HOrObTzMLXOaTL90HDpLNcmX-SK_GJHnsNeTM-Q4",
+  },
 };
 
 export default function RootLayout({
