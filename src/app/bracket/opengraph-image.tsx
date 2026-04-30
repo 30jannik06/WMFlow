@@ -20,22 +20,29 @@ export default function OgImage() {
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "rgba(244,237,224,0.5)", fontSize: "16px", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#d4ff3d" }} />
-          FIFA World Cup 2026
+        {/* Top label */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#d4ff3d", flexShrink: 0 }} />
+          <div style={{ color: "rgba(244,237,224,0.5)", fontSize: "16px", letterSpacing: "0.2em" }}>
+            FIFA World Cup 2026
+          </div>
         </div>
 
+        {/* Title block */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ fontSize: "24px", color: "rgba(212,255,61,0.7)", letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "monospace" }}>
-            Turnierbaum
+          <div style={{ display: "flex" }}>
+            <div style={{ fontSize: "24px", color: "rgba(212,255,61,0.7)", letterSpacing: "0.2em" }}>
+              Turnierbaum
+            </div>
           </div>
           <div style={{ fontSize: "120px", fontWeight: 900, lineHeight: 0.85, color: "#f4ede0", letterSpacing: "-0.04em" }}>
             KO-Runden
           </div>
         </div>
 
+        {/* Bottom row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ color: "rgba(244,237,224,0.4)", fontSize: "18px", fontFamily: "monospace" }}>
+          <div style={{ color: "rgba(244,237,224,0.4)", fontSize: "18px" }}>
             R32 → R16 → QF → SF → Finale
           </div>
           <div style={{ background: "#d4ff3d", color: "#0a1628", padding: "12px 28px", borderRadius: "100px", fontSize: "16px", fontWeight: 700 }}>
