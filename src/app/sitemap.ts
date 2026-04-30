@@ -1,7 +1,16 @@
 import type { MetadataRoute } from "next";
 
+const GROUP_CODES = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://wmflow.online";
+
+  const groupPages = GROUP_CODES.map((code) => ({
+    url: `${base}/gruppen/${code}`,
+    lastModified: new Date(),
+    changeFrequency: "hourly" as const,
+    priority: 0.8,
+  }));
 
   return [
     {
@@ -16,6 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "hourly",
       priority: 0.9,
     },
+    ...groupPages,
     {
       url: `${base}/spiele`,
       lastModified: new Date(),

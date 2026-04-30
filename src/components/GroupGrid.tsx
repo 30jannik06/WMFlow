@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 type Standing = {
@@ -45,7 +46,7 @@ export default function GroupGrid({ groups }: Props) {
 
 function GroupCard({ code, standings }: { code: string; standings: Standing[] }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[var(--ink)]/10 bg-white/60 backdrop-blur-sm">
+    <div className="group relative overflow-hidden rounded-2xl border border-[var(--ink)]/10 bg-white/60 backdrop-blur-sm">
       {/* Großer Gruppen-Buchstabe als Background-Element */}
       <div
         aria-hidden
@@ -55,14 +56,20 @@ function GroupCard({ code, standings }: { code: string; standings: Standing[] })
       </div>
 
       {/* Header */}
-      <div className="relative flex items-center gap-3 px-5 py-4 border-b border-[var(--ink)]/10">
+      <Link
+        href={`/gruppen/${code}`}
+        className="relative flex items-center gap-3 px-5 py-4 border-b border-[var(--ink)]/10 hover:bg-[var(--ink)]/[0.02] transition-colors"
+      >
         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--accent)] text-[var(--ink)] font-mono font-bold text-sm">
           {code}
         </span>
         <span className="text-xs font-mono uppercase tracking-[0.2em] text-[var(--ink)]/50">
           Gruppe {code}
         </span>
-      </div>
+        <span className="ml-auto text-[10px] font-mono text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity">
+          Details →
+        </span>
+      </Link>
 
       {/* Tabelle */}
       <table className="w-full text-sm">

@@ -50,8 +50,10 @@ export async function updateMatchResult(
 
   revalidatePath("/admin");
   revalidatePath("/gruppen");
+  revalidatePath("/gruppen", "layout");
   revalidatePath("/spiele");
   revalidatePath("/bracket");
+  revalidatePath("/");
 }
 
 export async function resetMatch(matchId: string) {
@@ -87,8 +89,10 @@ export async function resetMatch(matchId: string) {
 
   revalidatePath("/admin");
   revalidatePath("/gruppen");
+  revalidatePath("/gruppen", "layout");
   revalidatePath("/spiele");
   revalidatePath("/bracket");
+  revalidatePath("/");
 }
 
 async function advanceBracket(nextMatchId: string, slot: "home" | "away", winnerId: string) {
