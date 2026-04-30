@@ -47,3 +47,6 @@ next-env.d.ts
 # Graphify
 graphify-out/
 .graphify_*
+
+# Claude Code local settings
+.claude/

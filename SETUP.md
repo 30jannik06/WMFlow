@@ -1,102 +1,93 @@
 # wmflow — Setup Guide
 
-## 1. Projekt initialisieren
+## Voraussetzungen
+
+- Node.js 20+
+- pnpm
+- PostgreSQL-Datenbank (z.B. [Neon](https://neon.tech))
+- Discord Application für OAuth
+
+## 1. Repository klonen
 
 ```bash
-npx create-next-app@latest wmflow --typescript --tailwind --app --src-dir=false
+git clone https://github.com/30jannik06/wmflow.git
 cd wmflow
+pnpm install
 ```
 
-## 2. Dependencies installieren
+## 2. Environment konfigurieren
 
 ```bash
-# Animation & Smooth Scroll
-npm install framer-motion lenis
-
-# Database
-npm install prisma @prisma/client
-npm install -D prisma
-
-# i18n (für DE + EN)
-npm install next-intl
-
-# Newsletter (Empfehlung Brevo)
-npm install @getbrevo/brevo
+cp .env.example .env
 ```
 
-## 3. Prisma einrichten
+`.env` befüllen:
+
+```env
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=verify-full"
+AUTH_SECRET="..."         # openssl rand -base64 32
+DISCORD_CLIENT_ID="..."
+DISCORD_CLIENT_SECRET="..."
+ADMIN_REGISTRATION_OPEN="false"
+```
+
+**Discord App einrichten:** https://discord.com/developers/applications  
+Redirect URI: `http://localhost:3000/api/auth/callback/discord`
+
+## 3. Datenbank migrieren & seeden
 
 ```bash
-# Schema-Datei aus diesem Setup übernehmen → prisma/schema.prisma
-# .env anlegen mit deiner DB-URL:
-echo 'DATABASE_URL="postgresql://USER:PASS@HOST:5432/wmflow?sslmode=require"' > .env
-
-# Migration laufen lassen
-npx prisma migrate dev --name init
-npx prisma generate
+npx prisma migrate dev
+npx prisma db seed        # 48 Teams + 72 Gruppenspiele + 32 KO-Spiele
 ```
 
-## 4. Lenis Provider in Layout einbinden
-
-In `app/layout.tsx`:
-
-```tsx
-import LenisProvider from './_components/LenisProvider';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="de">
-      <body>
-        <LenisProvider>{children}</LenisProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-## 5. Dateien aus diesem Bundle kopieren
-
-| Datei | Ziel |
-|---|---|
-| `prisma/schema.prisma` | `prisma/schema.prisma` |
-| `app/_components/LenisProvider.tsx` | `app/_components/LenisProvider.tsx` |
-| `app/page.tsx` | `app/page.tsx` |
-
-## 6. Dev-Server starten
+## 4. Dev-Server starten
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 → http://localhost:3000
 
-## 7. Was als Nächstes
+## 5. Admin-Account registrieren
 
-- [ ] DB-URL in `.env` eintragen, dann `npx prisma migrate dev`
-- [ ] Newsletter-API-Route bauen: `app/api/newsletter/route.ts` (Brevo SDK)
-- [ ] Hero-Background-Bild ersetzen (aktuell SVG-Stadion, später echtes Foto möglich)
-- [ ] i18n-Routing auf `/de` und `/en` aufteilen mit `next-intl`
-- [ ] Sport-Daten-API-Provider entscheiden und Repository-Layer bauen
+```env
+# .env:
+ADMIN_REGISTRATION_OPEN="true"
+```
 
-## Design-Notes
+→ `/admin/login` → Discord-Login → zurück auf `false` setzen.
 
-**Aesthetic:** Editorial-Sport, inspiriert von The Athletic / Copa90 — bewusst NICHT klassisches FIFA-Blau-Weiß-Rot.
+## Nützliche Befehle
 
-**Farb-Palette:**
-- `--ink: #0a1628` (tiefes Marineblau, fast schwarz)
-- `--paper: #f4ede0` (warmes Cremeweiß, vermeidet steriles Weiß)
-- `--accent: #d4ff3d` (Säure-Gelb/Limette, energetisch)
-- `--accent-2: #ff4d2e` (Coral als zweiter Akzent)
+```bash
+pnpm dev                            # Dev-Server
+npx prisma db seed                  # Seed zurücksetzen
+npx tsx prisma/seed-test-results.ts # Test: Deutschland gewinnt WM
+npx next build                      # Build-Check
+npx prisma studio                   # DB-GUI
+```
+
+## Prisma 7 — Breaking Changes
+
+Diese Version weicht von älteren Prisma-Tutorials ab:
+
+- `url` steht **nicht** in `datasource db {}` — kommt aus `prisma.config.ts` via `defineConfig`
+- Generator-Output explizit: `output = "../src/generated/prisma"`
+- Import immer: `import { PrismaClient } from "@/generated/prisma"` — nie `@prisma/client`
+- Seed-Config in `prisma.config.ts` unter `migrations.seed`, nicht nur in `package.json`
+
+## Design-System
+
+**Farbpalette:**
+- `--ink: #0a1628` — Tiefes Marineblau
+- `--paper: #f4ede0` — Warmes Cremeweiß
+- `--accent: #d4ff3d` — Säure-Gelb
+- `--accent-2: #ff4d2e` — Coral
 
 **Typografie:**
-- Display: Fraunces (variable Serif mit Charakter)
+- Display: Fraunces (variable Serif)
 - Body: Inter Tight
-- Mono: JetBrains Mono (für Tags & Mikro-Labels)
+- Mono: JetBrains Mono
 
-**Parallax-Layer (Hero):**
-1. Sky — Sterne + Lichtschein (slowest)
-2. Stadium — SVG-Silhouette mit Flutlichtern
-3. Floating Flags — 8 Team-Emojis mit eigenem Bewegungs-Profil
-4. Foreground — Headline + Countdown (fastest)
-
-Plus Noise-Overlay für Editorial-Print-Feel.
+**Tailwind v4:** CSS-first — `@import "tailwindcss"` + `@theme inline` in `globals.css`, kein `tailwind.config.js`.

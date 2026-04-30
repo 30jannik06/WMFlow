@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# wmflow
 
-## Getting Started
+**FIFA WM 2026 Live-Tracker** — Gruppen, Spielplan, KO-Bracket.
 
-First, run the development server:
+Editorial-Sport-Aesthetic: Tiefblau `#0a1628` + Säuregelb `#d4ff3d`, inspiriert von The Athletic / Copa90.
+
+## Features
+
+- **Landing Page** — Countdown zur WM, Floating Flags mit Parallax
+- **Gruppen** — 12 Gruppen-Tabellen mit Live-Standings
+- **Spielplan** — 72 Gruppenspiele nach Datum gruppiert
+- **KO-Bracket** — Visueller Bracket R32 → Finale mit SVG-Konnektoren
+- **Admin Panel** — Ergebnisse eintragen, Discord OAuth (Whitelist-basiert)
+
+## Tech Stack
+
+| | |
+|---|---|
+| Framework | Next.js 16, React 19, TypeScript 6 |
+| Styling | Tailwind CSS v4 (CSS-first) |
+| Animation | framer-motion 12, Lenis (smooth scroll) |
+| DB | Prisma 7 + PrismaPg Adapter + PostgreSQL (Neon) |
+| Auth | NextAuth v5, Discord OAuth |
+| Flags | flag-icons (`fi fi-{iso2}`) |
+| i18n | next-intl (vorbereitet) |
+| Package Manager | pnpm |
+
+## Setup
+
+### 1. Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+# .env befüllen: DATABASE_URL, AUTH_SECRET, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`AUTH_SECRET` generieren:
+```bash
+openssl rand -base64 32
+```
 
-## Learn More
+### 3. Datenbank
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Dev-Server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+→ http://localhost:3000
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Admin einrichten
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. `.env`: `ADMIN_REGISTRATION_OPEN="true"`
+2. `/admin/login` → Discord-Login → Account wird als Admin gespeichert
+3. `.env`: `ADMIN_REGISTRATION_OPEN="false"`
+
+## Prisma 7 — Breaking Changes
+
+- `url` kommt **nicht** aus `datasource db {}` im Schema, sondern aus `prisma.config.ts` via `defineConfig`
+- Prisma Client Output: `src/generated/prisma/` — Import: `import { PrismaClient } from "@/generated/prisma"`
+- Seed-Config in `prisma.config.ts` unter `migrations.seed`
+
+## Routen
+
+| Route | Feature | Status |
+|---|---|---|
+| `/` | Landing Page, Countdown, Parallax | ✅ |
+| `/gruppen` | 12 Gruppen-Tabellen | ✅ |
+| `/spiele` | 72 Gruppenspiele nach Datum | ✅ |
+| `/bracket` | KO-Bracket R32 → Finale | ✅ |
+| `/admin` | Ergebnisse eintragen | ✅ |
+| `/gruppen/[code]` | Gruppendetailseite | ⬜ |
