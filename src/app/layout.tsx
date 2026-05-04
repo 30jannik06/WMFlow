@@ -27,6 +27,31 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
+        {/* Consent Mode v2 — defaults must fire before gtag.js loads */}
+        <Script
+          id="gtag-consent-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', {
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+                analytics_storage: 'denied',
+                wait_for_update: 500
+              });
+              gtag('js', new Date());
+              gtag('config', 'ca-pub-6533504114528332');
+            `,
+          }}
+        />
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=ca-pub-6533504114528332"
+          strategy="beforeInteractive"
+        />
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6533504114528332"
