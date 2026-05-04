@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import LenisProvider from "@/components/LenisProvider";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
@@ -29,6 +30,12 @@ export default function RootLayout({
       </head>
       <body>
         <LenisProvider>{children}</LenisProvider>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6533504114528332"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
