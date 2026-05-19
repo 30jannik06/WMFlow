@@ -84,6 +84,9 @@ model Match {
   
   winnerId String?
   winner   Team?   @relation("Winner", fields: [winnerId], references: [id])
+
+  // API-Football Fixture ID — befüllt durch prisma/seed-fixture-ids.ts
+  apiFixtureId Int? @unique
   
   // Auto-Progression: wohin wandert der Sieger?
   nextMatchId String?

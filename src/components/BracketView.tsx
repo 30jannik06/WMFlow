@@ -7,9 +7,9 @@ import { AnimatePresence, motion } from "framer-motion";
 // Visual tournament bracket — 5 rounds left→right, SVG connectors
 // Layout maths: SLOT_H doubles each round so cards stay vertically centred
 
-const CARD_H = 64;
-const SLOT_H = 80; // slot height in R32; doubles per round
-const TOTAL_H = 16 * SLOT_H; // 1280px (all rounds share this height)
+const CARD_H = 80;
+const SLOT_H = 96; // slot height in R32; doubles per round
+const TOTAL_H = 16 * SLOT_H; // 1536px (all rounds share this height)
 const COL_W = 192; // match card column width
 const CONN_W = 28; // connector SVG width between columns
 
@@ -157,6 +157,14 @@ function BracketCard({
     ? "border-[var(--accent)] border-2 shadow-[0_0_0_1px_var(--accent)]"
     : "border-[var(--ink)]/15";
 
+  const kickoff = match ? new Date(match.kickoffUtc) : null;
+  const dateStr = kickoff
+    ? kickoff.toLocaleDateString("de-DE", { day: "numeric", month: "short" })
+    : null;
+  const timeStr = kickoff
+    ? kickoff.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
     <div
       style={{ position: "absolute", top, left: 0, width: COL_W, height: CARD_H }}
@@ -179,6 +187,17 @@ function BracketCard({
         score={match?.awayScore}
         played={played}
       />
+
+      {dateStr && (
+        <>
+          <div className="h-px bg-[var(--ink)]/8" />
+          <div className="flex items-center gap-1 px-2 py-1 bg-[var(--ink)]/[0.03]">
+            <span className="text-[9px] font-mono text-[var(--muted)] truncate leading-none">
+              {dateStr} · {timeStr} · {match?.city}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

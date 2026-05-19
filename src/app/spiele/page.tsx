@@ -10,37 +10,47 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default async function SpieleePage() {
-  const matches = await prisma.match.findMany({
-    where: { phase: "group" },
-    orderBy: { kickoffUtc: "asc" },
-    include: { homeTeam: true, awayTeam: true },
-  });
+function serializeMatches<T extends { kickoffUtc: Date; createdAt: Date; updatedAt: Date; homeTeam: { createdAt: Date; updatedAt: Date } | null; awayTeam: { createdAt: Date; updatedAt: Date } | null }>(matches: T[]) {
+  return matches.map((m) => ({
+    ...m,
+    kickoffUtc: m.kickoffUtc.toISOString(),
+    createdAt: m.createdAt.toISOString(),
+    updatedAt: m.updatedAt.toISOString(),
+    homeTeam: m.homeTeam
+      ? { ...m.homeTeam, createdAt: m.homeTeam.createdAt.toISOString(), updatedAt: m.homeTeam.updatedAt.toISOString() }
+      : null,
+    awayTeam: m.awayTeam
+      ? { ...m.awayTeam, createdAt: m.awayTeam.createdAt.toISOString(), updatedAt: m.awayTeam.updatedAt.toISOString() }
+      : null,
+  }));
+}
 
-  // Group by UTC date (YYYY-MM-DD)
-  const byDate = matches.reduce<Record<string, typeof matches>>((acc, m) => {
-    const key = m.kickoffUtc.toISOString().slice(0, 10);
+function groupByDate<T extends { kickoffUtc: string }>(matches: T[]) {
+  const byDate = matches.reduce<Record<string, T[]>>((acc, m) => {
+    const key = m.kickoffUtc.slice(0, 10);
     if (!acc[key]) acc[key] = [];
     acc[key].push(m);
     return acc;
   }, {});
+  return Object.entries(byDate).map(([dateKey, ms]) => ({ dateKey, matches: ms }));
+}
 
-  // Serialize Dates to strings for client components
-  const days = Object.entries(byDate).map(([dateKey, ms]) => ({
-    dateKey,
-    matches: ms.map((m) => ({
-      ...m,
-      kickoffUtc: m.kickoffUtc.toISOString(),
-      createdAt: m.createdAt.toISOString(),
-      updatedAt: m.updatedAt.toISOString(),
-      homeTeam: m.homeTeam
-        ? { ...m.homeTeam, createdAt: m.homeTeam.createdAt.toISOString(), updatedAt: m.homeTeam.updatedAt.toISOString() }
-        : null,
-      awayTeam: m.awayTeam
-        ? { ...m.awayTeam, createdAt: m.awayTeam.createdAt.toISOString(), updatedAt: m.awayTeam.updatedAt.toISOString() }
-        : null,
-    })),
-  }));
+export default async function SpieleePage() {
+  const [groupMatches, koMatches] = await Promise.all([
+    prisma.match.findMany({
+      where: { phase: "group" },
+      orderBy: { kickoffUtc: "asc" },
+      include: { homeTeam: true, awayTeam: true },
+    }),
+    prisma.match.findMany({
+      where: { phase: { not: "group" } },
+      orderBy: { kickoffUtc: "asc" },
+      include: { homeTeam: true, awayTeam: true },
+    }),
+  ]);
+
+  const groupDays = groupByDate(serializeMatches(groupMatches));
+  const koDays = groupByDate(serializeMatches(koMatches));
 
   return (
     <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
@@ -60,7 +70,7 @@ export default async function SpieleePage() {
             Spielplan
           </h1>
           <p className="text-sm font-mono text-[var(--muted)]">
-            Gruppenphase · 72 Spiele · 11.–27. Juni 2026
+            104 Spiele · 11. Juni – 19. Juli 2026
           </p>
         </div>
 
@@ -89,7 +99,29 @@ export default async function SpieleePage() {
           </Link>
         </div>
 
-        <MatchList days={days} />
+        {/* Gruppenphase */}
+        <div className="mb-4">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="text-[11px] font-mono uppercase tracking-[0.3em] text-[var(--ink)]">
+              Gruppenphase
+            </h2>
+            <div className="flex-1 h-px bg-[var(--ink)]/12" />
+            <span className="text-[10px] font-mono text-[var(--muted)]">72 Spiele</span>
+          </div>
+          <MatchList days={groupDays} />
+        </div>
+
+        {/* KO-Phase */}
+        <div className="mt-20">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="text-[11px] font-mono uppercase tracking-[0.3em] text-[var(--ink)]">
+              K.O.-Phase
+            </h2>
+            <div className="flex-1 h-px bg-[var(--ink)]/12" />
+            <span className="text-[10px] font-mono text-[var(--muted)]">32 Spiele</span>
+          </div>
+          <MatchList days={koDays} />
+        </div>
       </div>
     </main>
   );

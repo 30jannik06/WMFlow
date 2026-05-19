@@ -12,6 +12,7 @@ type Team = {
 type Match = {
   id: string;
   matchNumber: number;
+  phase: string;
   kickoffUtc: string; // ISO string (serialized from Date)
   venue: string;
   city: string;
@@ -20,6 +21,8 @@ type Match = {
   awayScore: number | null;
   homeTeam: Team | null;
   awayTeam: Team | null;
+  homePlaceholder: string | null;
+  awayPlaceholder: string | null;
 };
 
 type DayGroup = {
@@ -42,9 +45,29 @@ const GROUP_COLORS: Record<string, string> = {
   L: "bg-[#6b7280] text-white",
 };
 
+const PHASE_LABELS: Record<string, string> = {
+  r32:   "Runde der 32",
+  r16:   "Achtelfinale",
+  qf:    "Viertelfinale",
+  sf:    "Halbfinale",
+  final: "Finale",
+  third: "Platz 3",
+};
+
 function MatchCard({ match }: { match: Match }) {
+  const isKO = match.phase !== "group";
   const group = match.homeTeam?.groupCode ?? "";
-  const badgeClass = GROUP_COLORS[group] ?? "bg-[var(--muted)] text-white";
+  const badgeClass = isKO
+    ? "bg-[var(--accent)] text-[#0a1628]"
+    : (GROUP_COLORS[group] ?? "bg-[var(--muted)] text-white");
+  const badgeLabel = isKO
+    ? (PHASE_LABELS[match.phase] ?? match.phase)
+    : `Gruppe ${group}`;
+
+  const homeName = match.homeTeam?.nameDe ?? match.homePlaceholder ?? "?";
+  const homeFifa = match.homeTeam?.fifaCode ?? "—";
+  const awayName = match.awayTeam?.nameDe ?? match.awayPlaceholder ?? "?";
+  const awayFifa = match.awayTeam?.fifaCode ?? "—";
 
   const kickoff = new Date(match.kickoffUtc);
   const timeStr = kickoff.toLocaleTimeString("de-DE", {
@@ -61,7 +84,7 @@ function MatchCard({ match }: { match: Match }) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--ink)]/8">
         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm ${badgeClass}`}>
-          Gruppe {group}
+          {badgeLabel}
         </span>
         <div className="flex items-center gap-2">
           {isLive && (
@@ -81,12 +104,16 @@ function MatchCard({ match }: { match: Match }) {
         {/* Home */}
         <div className="flex-1 flex items-center gap-2 justify-end">
           <span className="text-right text-sm font-semibold leading-tight hidden sm:block">
-            {match.homeTeam?.nameDe ?? "—"}
+            {homeName}
           </span>
           <span className="text-right text-xs font-mono text-[var(--muted)] sm:hidden">
-            {match.homeTeam?.fifaCode ?? "—"}
+            {homeFifa}
           </span>
-          <span className={`fi fi-${match.homeTeam?.flagUrl ?? "xx"} text-xl flex-shrink-0`} />
+          {match.homeTeam ? (
+            <span className={`fi fi-${match.homeTeam.flagUrl} text-xl flex-shrink-0`} />
+          ) : (
+            <span className="w-6 h-4 bg-[var(--ink)]/10 rounded-sm flex-shrink-0" />
+          )}
         </div>
 
         {/* Score / Time */}
@@ -105,12 +132,16 @@ function MatchCard({ match }: { match: Match }) {
 
         {/* Away */}
         <div className="flex-1 flex items-center gap-2">
-          <span className={`fi fi-${match.awayTeam?.flagUrl ?? "xx"} text-xl flex-shrink-0`} />
+          {match.awayTeam ? (
+            <span className={`fi fi-${match.awayTeam.flagUrl} text-xl flex-shrink-0`} />
+          ) : (
+            <span className="w-6 h-4 bg-[var(--ink)]/10 rounded-sm flex-shrink-0" />
+          )}
           <span className="text-left text-sm font-semibold leading-tight hidden sm:block">
-            {match.awayTeam?.nameDe ?? "—"}
+            {awayName}
           </span>
           <span className="text-left text-xs font-mono text-[var(--muted)] sm:hidden">
-            {match.awayTeam?.fifaCode ?? "—"}
+            {awayFifa}
           </span>
         </div>
       </div>
