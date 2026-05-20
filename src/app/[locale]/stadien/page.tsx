@@ -87,7 +87,7 @@ export default async function StadienPage({ params }: { params: Params }) {
             {t("title")}
           </h1>
           <p className="text-[var(--muted)] text-sm font-mono mt-4">
-            {totalVenues} {isEn ? "venues" : "Spielorte"} · {usCnt} USA · {caCnt} {isEn ? "Canada" : "Kanada"} · {mxCnt} {isEn ? "Mexico" : "Mexiko"}
+            {totalVenues} {t("title")} · {usCnt} USA · {caCnt} {isEn ? "Canada" : "Kanada"} · {mxCnt} {isEn ? "Mexico" : "Mexiko"}
           </p>
         </div>
 

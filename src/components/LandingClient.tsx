@@ -311,7 +311,7 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
               {[
                 `48 ${t("statsTeams")}`,
                 `104 ${t("statsMatches")}`,
-                "16 Stadien",
+                `16 ${t("statsVenues")}`,
                 locale === "en" ? "3 Nations" : "3 Länder",
                 "11. Juni 2026",
                 "FIFA World Cup",

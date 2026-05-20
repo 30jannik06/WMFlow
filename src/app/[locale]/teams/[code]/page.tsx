@@ -36,6 +36,7 @@ export default async function TeamPage({ params }: { params: Params }) {
 
   const t = await getTranslations("teams");
   const tp = await getTranslations("phases");
+  const ts = await getTranslations("stats");
   const isEn = locale === "en";
 
   const team = await prisma.team.findUnique({ where: { fifaCode } });
@@ -112,13 +113,13 @@ export default async function TeamPage({ params }: { params: Params }) {
         {standing && (
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-px bg-[var(--ink)]/10 rounded-2xl overflow-hidden border border-[var(--ink)]/10 mb-12">
             {[
-              { label: "Sp", value: standing.played },
-              { label: "S",  value: standing.won },
-              { label: "U",  value: standing.drawn },
-              { label: "N",  value: standing.lost },
-              { label: isEn ? "Goals" : "Tore", value: `${standing.goalsFor}:${standing.goalsAgainst}`, wide: true },
-              { label: isEn ? "GD" : "TD", value: standing.goalDiff > 0 ? `+${standing.goalDiff}` : standing.goalDiff },
-              { label: isEn ? "Pts" : "Pkt", value: standing.points, accent: true },
+              { label: ts("played"), value: standing.played },
+              { label: ts("won"),    value: standing.won },
+              { label: ts("drawn"),  value: standing.drawn },
+              { label: ts("lost"),   value: standing.lost },
+              { label: ts("goals"),  value: `${standing.goalsFor}:${standing.goalsAgainst}`, wide: true },
+              { label: ts("diff"),   value: standing.goalDiff > 0 ? `+${standing.goalDiff}` : standing.goalDiff },
+              { label: ts("points"), value: standing.points, accent: true },
             ].map(({ label, value, accent, wide }) => (
               <div key={label} className={`bg-white/60 px-3 py-4 text-center ${wide ? "hidden sm:block" : ""}`}>
                 <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] mb-1">{label}</div>
