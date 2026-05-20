@@ -14,7 +14,10 @@ export default function LocaleSwitcher() {
       {routing.locales.map((l) => (
         <button
           key={l}
-          onClick={() => router.replace(pathname, { locale: l })}
+          onClick={() => {
+            document.cookie = `NEXT_LOCALE=${l};path=/;max-age=31536000`;
+            router.replace(pathname, { locale: l });
+          }}
           className={`text-[11px] font-mono uppercase tracking-[0.15em] px-2 py-1 rounded-sm transition-colors cursor-pointer ${
             locale === l
               ? "text-[var(--ink)] bg-[var(--ink)]/10 font-bold"
