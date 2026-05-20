@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 
 type Standing = {
@@ -17,15 +18,18 @@ type Standing = {
   team: {
     fifaCode: string;
     nameDe: string;
+    nameEn: string;
     flagUrl: string;
   };
 };
 
 type Props = {
   groups: Record<string, Standing[]>;
+  bestThirds?: string[];
 };
 
-export default function GroupGrid({ groups }: Props) {
+export default function GroupGrid({ groups, bestThirds = [] }: Props) {
+  const bestThirdsSet = new Set(bestThirds);
   const groupKeys = Object.keys(groups).sort();
 
   return (
@@ -37,17 +41,23 @@ export default function GroupGrid({ groups }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
         >
-          <GroupCard code={code} standings={groups[code]} />
+          <GroupCard code={code} standings={groups[code]} bestThirdsSet={bestThirdsSet} />
         </motion.div>
       ))}
     </div>
   );
 }
 
-function GroupCard({ code, standings }: { code: string; standings: Standing[] }) {
+function GroupCard({ code, standings, bestThirdsSet }: { code: string; standings: Standing[]; bestThirdsSet: Set<string> }) {
+  const t = useTranslations("groups");
+  const ts = useTranslations("stats");
+  const locale = useLocale();
+
+  const teamName = (team: { nameDe: string; nameEn: string }) =>
+    locale === "en" ? team.nameEn : team.nameDe;
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-[var(--ink)]/10 bg-white/60 backdrop-blur-sm">
-      {/* Großer Gruppen-Buchstabe als Background-Element */}
       <div
         aria-hidden
         className="absolute -right-3 -top-4 font-display text-[8rem] font-black leading-none text-[var(--ink)]/5 select-none pointer-events-none"
@@ -55,7 +65,6 @@ function GroupCard({ code, standings }: { code: string; standings: Standing[] })
         {code}
       </div>
 
-      {/* Header */}
       <Link
         href={`/gruppen/${code}`}
         className="relative flex items-center gap-3 px-5 py-4 border-b border-[var(--ink)]/10 hover:bg-[var(--ink)]/[0.02] transition-colors"
@@ -64,87 +73,65 @@ function GroupCard({ code, standings }: { code: string; standings: Standing[] })
           {code}
         </span>
         <span className="text-xs font-mono uppercase tracking-[0.2em] text-[var(--ink)]/50">
-          Gruppe {code}
+          {t("group")} {code}
         </span>
         <span className="ml-auto text-[10px] font-mono text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity">
-          Details →
+          {t("details")}
         </span>
       </Link>
 
-      {/* Tabelle */}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--ink)]/8">
             <th className="text-left px-5 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 w-6">#</th>
             <th className="text-left px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40">Team</th>
-            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40">Sp</th>
-            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">S</th>
-            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">U</th>
-            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">N</th>
-            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden md:table-cell">TD</th>
-            <th className="text-center px-3 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 font-bold">Pkt</th>
+            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40">{ts("played")}</th>
+            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">{ts("won")}</th>
+            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">{ts("drawn")}</th>
+            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden sm:table-cell">{ts("lost")}</th>
+            <th className="text-center px-2 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 hidden md:table-cell">{ts("diff")}</th>
+            <th className="text-center px-3 py-2 text-[9px] font-mono uppercase tracking-[0.15em] text-[var(--ink)]/40 font-bold">{ts("points")}</th>
           </tr>
         </thead>
         <tbody>
           {standings.map((s, idx) => {
-            const advances = idx < 2; // Top 2 kommen weiter
+            const advances = idx < 2;
+            const isThird = idx === 2;
+            const isBestThird = isThird && bestThirdsSet.has(s.team.fifaCode);
             return (
               <tr
                 key={s.id}
-                className={`
-                  border-b border-[var(--ink)]/5 last:border-0 transition-colors
-                  ${advances ? "bg-[var(--accent)]/8" : ""}
-                `}
+                className={`border-b border-[var(--ink)]/5 last:border-0 transition-colors ${advances || isBestThird ? "bg-[var(--accent)]/8" : ""}`}
               >
-                {/* Position */}
-                <td className="px-5 py-3 text-xs font-mono text-[var(--ink)]/40">
-                  {s.position}
-                </td>
-
-                {/* Flag + Name */}
+                <td className="px-5 py-3 text-xs font-mono text-[var(--ink)]/40">{s.position}</td>
                 <td className="px-2 py-3">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`fi fi-${s.team.flagUrl} rounded-sm flex-shrink-0`}
-                      style={{ fontSize: "1.1rem" }}
-                    />
-                    <span className="font-medium text-[var(--ink)] text-sm leading-tight">
-                      {s.team.nameDe}
-                    </span>
+                    <span className={`fi fi-${s.team.flagUrl} rounded-sm flex-shrink-0`} style={{ fontSize: "1.1rem" }} />
+                    <Link
+                      href={`/teams/${s.team.fifaCode.toLowerCase()}`}
+                      className="font-medium text-[var(--ink)] text-sm leading-tight hover:underline underline-offset-2"
+                    >
+                      {teamName(s.team)}
+                    </Link>
                     {advances && (
                       <span className="ml-auto text-[8px] font-mono uppercase tracking-wide text-[var(--accent-2)] hidden lg:inline">
-                        QF
+                        {t("advances")}
+                      </span>
+                    )}
+                    {isBestThird && (
+                      <span className="ml-auto text-[8px] font-mono uppercase tracking-wide text-[var(--muted)] hidden lg:inline">
+                        {t("advancesThird")}
                       </span>
                     )}
                   </div>
                 </td>
-
-                {/* Sp */}
-                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70">
-                  {s.played}
-                </td>
-
-                {/* S */}
-                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">
-                  {s.won}
-                </td>
-
-                {/* U */}
-                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">
-                  {s.drawn}
-                </td>
-
-                {/* N */}
-                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">
-                  {s.lost}
-                </td>
-
-                {/* TD */}
+                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70">{s.played}</td>
+                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">{s.won}</td>
+                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">{s.drawn}</td>
+                <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden sm:table-cell">{s.lost}</td>
                 <td className="px-2 py-3 text-center text-xs font-mono text-[var(--ink)]/70 hidden md:table-cell">
                   {s.goalDiff > 0 ? `+${s.goalDiff}` : s.goalDiff}
                 </td>
-
-                {/* Punkte */}
                 <td className="px-3 py-3 text-center">
                   <span className={`text-sm font-black font-mono ${advances ? "text-[var(--ink)]" : "text-[var(--ink)]/70"}`}>
                     {s.points}

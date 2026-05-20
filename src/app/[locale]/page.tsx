@@ -1,9 +1,15 @@
+import { setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import LandingClient, { type UpcomingMatch } from "@/components/LandingClient";
 
+type Params = Promise<{ locale: string }>;
+
 export const revalidate = 120;
 
-export default async function LandingPage() {
+export default async function LandingPage({ params }: { params: Params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const raw = await prisma.match.findMany({
     where: {
       status: "scheduled",
@@ -23,8 +29,12 @@ export default async function LandingPage() {
     phase: m.phase,
     homePlaceholder: m.homePlaceholder,
     awayPlaceholder: m.awayPlaceholder,
-    homeTeam: m.homeTeam ? { nameDe: m.homeTeam.nameDe, flagUrl: m.homeTeam.flagUrl } : null,
-    awayTeam: m.awayTeam ? { nameDe: m.awayTeam.nameDe, flagUrl: m.awayTeam.flagUrl } : null,
+    homeTeam: m.homeTeam
+      ? { nameDe: m.homeTeam.nameDe, nameEn: m.homeTeam.nameEn, flagUrl: m.homeTeam.flagUrl }
+      : null,
+    awayTeam: m.awayTeam
+      ? { nameDe: m.awayTeam.nameDe, nameEn: m.awayTeam.nameEn, flagUrl: m.awayTeam.flagUrl }
+      : null,
   }));
 
   return <LandingClient upcomingMatches={upcomingMatches} />;

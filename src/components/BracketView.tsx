@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, motion } from "framer-motion";
 
 // Visual tournament bracket — 5 rounds left→right, SVG connectors
@@ -15,12 +16,12 @@ const CONN_W = 28; // connector SVG width between columns
 
 // Bracket order: match numbers top-to-bottom in each round.
 // Pairs at positions (2i, 2i+1) always feed into position i of the next round.
-const ROUNDS: { key: string; label: string; nums: number[] }[] = [
-  { key: "r32",   label: "Runde der 32",  nums: [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87] },
-  { key: "r16",   label: "Achtelfinale",   nums: [89, 90, 93, 94, 91, 92, 95, 96] },
-  { key: "qf",    label: "Viertelfinale",  nums: [97, 98, 99, 100] },
-  { key: "sf",    label: "Halbfinale",     nums: [101, 102] },
-  { key: "final", label: "Finale",         nums: [104] },
+const ROUNDS: { key: string; nums: number[] }[] = [
+  { key: "r32",   nums: [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87] },
+  { key: "r16",   nums: [89, 90, 93, 94, 91, 92, 95, 96] },
+  { key: "qf",    nums: [97, 98, 99, 100] },
+  { key: "sf",    nums: [101, 102] },
+  { key: "final", nums: [104] },
 ];
 
 function slotSize(roundIndex: number) {
@@ -37,7 +38,7 @@ function midY(roundIndex: number, pos: number): number {
 }
 
 // ── types ────────────────────────────────────────────────────
-type Team = { fifaCode: string; nameDe: string; flagUrl: string };
+type Team = { fifaCode: string; nameDe: string; nameEn: string; flagUrl: string };
 type Match = {
   id: string;
   matchNumber: number;
@@ -144,9 +145,11 @@ function BracketCard({
   pos: number;
   isFinal?: boolean;
 }) {
+  const locale = useLocale();
+  const isEn = locale === "en";
   const top = cardTop(roundIndex, pos);
-  const homeName = match?.homeTeam?.nameDe ?? match?.homePlaceholder ?? "?";
-  const awayName = match?.awayTeam?.nameDe ?? match?.awayPlaceholder ?? "?";
+  const homeName = (isEn ? match?.homeTeam?.nameEn : match?.homeTeam?.nameDe) ?? match?.homePlaceholder ?? "?";
+  const awayName = (isEn ? match?.awayTeam?.nameEn : match?.awayTeam?.nameDe) ?? match?.awayPlaceholder ?? "?";
   const homeFlagUrl = match?.homeTeam?.flagUrl;
   const awayFlagUrl = match?.awayTeam?.flagUrl;
   const played = match?.homeScore !== null && match?.homeScore !== undefined;
@@ -158,11 +161,12 @@ function BracketCard({
     : "border-[var(--ink)]/15";
 
   const kickoff = match ? new Date(match.kickoffUtc) : null;
+  const dateLocale = isEn ? "en-US" : "de-DE";
   const dateStr = kickoff
-    ? kickoff.toLocaleDateString("de-DE", { day: "numeric", month: "short" })
+    ? kickoff.toLocaleDateString(dateLocale, { day: "numeric", month: "short" })
     : null;
   const timeStr = kickoff
-    ? kickoff.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+    ? kickoff.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })
     : null;
 
   return (
@@ -204,10 +208,13 @@ function BracketCard({
 
 // ── third place card ──────────────────────────────────────────
 function ThirdPlaceCard({ match }: { match: Match | undefined }) {
+  const locale = useLocale();
+  const tp = useTranslations("phases");
   if (!match) return null;
-  const homeName = match.homeTeam?.nameDe ?? match.homePlaceholder ?? "?";
-  const awayName = match.awayTeam?.nameDe ?? match.awayPlaceholder ?? "?";
-  const date = new Date(match.kickoffUtc).toLocaleDateString("de-DE", {
+  const isEn = locale === "en";
+  const homeName = (isEn ? match.homeTeam?.nameEn : match.homeTeam?.nameDe) ?? match.homePlaceholder ?? "?";
+  const awayName = (isEn ? match.awayTeam?.nameEn : match.awayTeam?.nameDe) ?? match.awayPlaceholder ?? "?";
+  const date = new Date(match.kickoffUtc).toLocaleDateString(isEn ? "en-US" : "de-DE", {
     day: "numeric",
     month: "short",
   });
@@ -215,7 +222,7 @@ function ThirdPlaceCard({ match }: { match: Match | undefined }) {
   return (
     <div className="mt-10 inline-block">
       <div className="text-[9px] font-mono uppercase tracking-[0.25em] text-[var(--muted)] mb-2">
-        Spiel um Platz 3 · {date} · {match.venue}
+        {tp("third")} · {date} · {match.venue}
       </div>
       <div
         className="border border-[var(--ink)]/15 bg-[var(--paper)] rounded-sm overflow-hidden flex flex-col"
@@ -258,6 +265,7 @@ export default function BracketView({
   thirdPlace: Match | undefined;
 }) {
   const router = useRouter();
+  const tp = useTranslations("phases");
 
   useEffect(() => {
     const id = setInterval(() => router.refresh(), 30_000);
@@ -268,14 +276,12 @@ export default function BracketView({
 
   return (
     <div>
-      {/* Hint for small screens */}
       <p className="text-[10px] font-mono text-[var(--muted)] mb-4 md:hidden">
-        ← scrollen für den vollen Bracket
+        ← scroll
       </p>
 
       <div className="overflow-x-auto select-none">
         <div style={{ width: totalWidth, position: "relative" }}>
-          {/* Column headers */}
           <div className="flex mb-3" style={{ gap: 0 }}>
             {ROUNDS.map((round, ri) => (
               <div
@@ -283,7 +289,7 @@ export default function BracketView({
                 style={{ width: ri < ROUNDS.length - 1 ? COL_W + CONN_W : COL_W, flexShrink: 0 }}
                 className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--muted)]"
               >
-                {round.label}
+                {tp(round.key as Parameters<typeof tp>[0])}
               </div>
             ))}
           </div>

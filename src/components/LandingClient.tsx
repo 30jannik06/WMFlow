@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useSpring, type MotionValue } from "framer-motion";
 
@@ -98,30 +99,15 @@ export type UpcomingMatch = {
   phase: string;
   homePlaceholder: string | null;
   awayPlaceholder: string | null;
-  homeTeam: { nameDe: string; flagUrl: string } | null;
-  awayTeam: { nameDe: string; flagUrl: string } | null;
+  homeTeam: { nameDe: string; nameEn: string; flagUrl: string } | null;
+  awayTeam: { nameDe: string; nameEn: string; flagUrl: string } | null;
 };
-
-const phaseLabelMap: Record<string, string> = {
-  group: "Gruppenphase",
-  r32: "Runde der 32",
-  r16: "Achtelfinale",
-  qf: "Viertelfinale",
-  sf: "Halbfinale",
-  third: "Platz 3",
-  final: "Finale",
-};
-
-const fmtShort = new Intl.DateTimeFormat("de-DE", {
-  timeZone: "Europe/Berlin",
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 export default function LandingClient({ upcomingMatches }: { upcomingMatches: UpcomingMatch[] }) {
+  const t = useTranslations("landing");
+  const tp = useTranslations("phases");
+  const locale = useLocale();
+
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const smoothScroll = useSpring(scrollYProgress, { stiffness: 80, damping: 20 });
@@ -133,6 +119,28 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
   const heroScale = useTransform(smoothScroll, [0, 1], [1, 1.1]);
 
   const countdown = useCountdown(WM_KICKOFF);
+
+  const fmtShort = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "de-DE", {
+    timeZone: "Europe/Berlin",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  function teamName(team: { nameDe: string; nameEn: string }) {
+    return locale === "en" ? team.nameEn : team.nameDe;
+  }
+
+  const timelineItems = [
+    { phase: tp("group"),  dates: locale === "en" ? "Jun 11–27"     : "11.–27. Juni",     matches: 72, accent: false },
+    { phase: tp("r32"),    dates: locale === "en" ? "Jun 28–Jul 4"  : "28. Juni–4. Juli", matches: 16, accent: false },
+    { phase: tp("r16"),    dates: locale === "en" ? "Jul 5–8"       : "5.–8. Juli",       matches: 8,  accent: false },
+    { phase: tp("qf"),     dates: locale === "en" ? "Jul 10–11"     : "10.–11. Juli",     matches: 4,  accent: false },
+    { phase: tp("sf"),     dates: locale === "en" ? "Jul 14–15"     : "14.–15. Juli",     matches: 2,  accent: false },
+    { phase: tp("final"),  dates: locale === "en" ? "Jul 19"        : "19. Juli",         matches: 1,  accent: true },
+  ];
 
   return (
     <main className="relative bg-[var(--paper)] text-[var(--ink)]">
@@ -242,9 +250,9 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
             transition={{ duration: 0.8, delay: 0.8 }}
             className="mt-8 max-w-xl text-lg md:text-xl text-[var(--paper)]/75 leading-relaxed"
           >
-            48 Teams. 104 Spiele. Drei Länder.
+            {t("subtitle")}
             <br />
-            Verfolge die WM 2026 in Echtzeit.
+            {t("description")}
           </motion.p>
 
           {/* Countdown */}
@@ -255,13 +263,13 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
             className="mt-14"
           >
             <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--paper)]/60 mb-4">
-              Anstoß in
+              {t("countdownIn")}
             </div>
             <div className="grid grid-cols-4 gap-2 md:gap-5">
-              <CountdownUnit value={countdown.days} label="Tage" />
-              <CountdownUnit value={countdown.hours} label="Std" />
-              <CountdownUnit value={countdown.minutes} label="Min" />
-              <CountdownUnit value={countdown.seconds} label="Sek" />
+              <CountdownUnit value={countdown.days} label={t("days")} />
+              <CountdownUnit value={countdown.hours} label={t("hours")} />
+              <CountdownUnit value={countdown.minutes} label={t("minutes")} />
+              <CountdownUnit value={countdown.seconds} label={t("seconds")} />
             </div>
 
             <motion.div
@@ -275,19 +283,19 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                   href="/gruppen"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--accent)] text-[var(--ink)] font-bold text-sm hover:bg-[var(--paper)] transition-colors"
                 >
-                  Gruppen ansehen →
+                  {t("ctaGroups")}
                 </Link>
                 <Link
                   href="/spiele"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[var(--paper)]/40 text-[var(--paper)] font-bold text-sm hover:bg-[var(--paper)]/10 transition-colors"
                 >
-                  Spielplan →
+                  {t("ctaSchedule")}
                 </Link>
                 <Link
                   href="/stadien"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[var(--paper)]/40 text-[var(--paper)] font-bold text-sm hover:bg-[var(--paper)]/10 transition-colors"
                 >
-                  Stadien →
+                  {t("ctaVenues")}
                 </Link>
               </div>
             </motion.div>
@@ -301,8 +309,13 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
           {[...Array(2)].map((_, i) => (
             <span key={i} className="flex items-center gap-0 shrink-0">
               {[
-                "48 Teams", "104 Spiele", "16 Stadien", "3 Länder",
-                "6 Kontinente", "11. Juni 2026", "FIFA World Cup", "USA · Kanada · Mexiko",
+                `48 ${t("statsTeams")}`,
+                `104 ${t("statsMatches")}`,
+                "16 Stadien",
+                locale === "en" ? "3 Nations" : "3 Länder",
+                "11. Juni 2026",
+                "FIFA World Cup",
+                "USA · Canada · Mexico",
               ].map((item) => (
                 <span key={item} className="flex items-center">
                   <span className="text-[11px] font-mono font-bold uppercase tracking-[0.2em] px-6">{item}</span>
@@ -326,10 +339,10 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
               className="mb-10"
             >
               <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--muted)] mb-3">
-                Coming up
+                {t("upcomingLabel")}
               </div>
               <h2 className="font-display text-4xl md:text-6xl font-black leading-[0.95] tracking-tight">
-                Nächste Spiele
+                {t("upcoming")}
               </h2>
             </motion.div>
 
@@ -343,21 +356,19 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                   transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="rounded-2xl border border-[var(--ink)]/10 bg-white/60 p-6 flex flex-col gap-5"
                 >
-                  {/* Meta */}
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--muted)]">
-                      {phaseLabelMap[m.phase] ?? m.phase}
+                      {tp(m.phase as keyof typeof tp)}
                     </span>
                     <span className="text-[9px] font-mono text-[var(--muted)]">#{m.matchNumber}</span>
                   </div>
 
-                  {/* Teams */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-center flex-1">
                       {m.homeTeam ? (
                         <>
                           <span className={`fi fi-${m.homeTeam.flagUrl} rounded-sm block mx-auto mb-2`} style={{ fontSize: "2.2rem" }} />
-                          <div className="text-xs font-medium leading-tight">{m.homeTeam.nameDe}</div>
+                          <div className="text-xs font-medium leading-tight">{teamName(m.homeTeam)}</div>
                         </>
                       ) : (
                         <>
@@ -366,14 +377,12 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                         </>
                       )}
                     </div>
-
                     <div className="font-mono text-lg font-black text-[var(--ink)]/20 shrink-0">vs</div>
-
                     <div className="text-center flex-1">
                       {m.awayTeam ? (
                         <>
                           <span className={`fi fi-${m.awayTeam.flagUrl} rounded-sm block mx-auto mb-2`} style={{ fontSize: "2.2rem" }} />
-                          <div className="text-xs font-medium leading-tight">{m.awayTeam.nameDe}</div>
+                          <div className="text-xs font-medium leading-tight">{teamName(m.awayTeam)}</div>
                         </>
                       ) : (
                         <>
@@ -384,7 +393,6 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                     </div>
                   </div>
 
-                  {/* Time & venue */}
                   <div className="pt-3 border-t border-[var(--ink)]/8">
                     <div className="text-[10px] font-mono text-[var(--muted)]">
                       {fmtShort.format(new Date(m.kickoffUtc))}
@@ -406,13 +414,13 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                 href="/spiele"
                 className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-4 py-2 rounded-sm hover:border-[var(--ink)]/50"
               >
-                Alle Gruppenspiele →
+                {t("viewAll")}
               </Link>
               <Link
                 href="/bracket"
                 className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-4 py-2 rounded-sm hover:border-[var(--ink)]/50"
               >
-                KO-Bracket →
+                {t("viewBracket")}
               </Link>
             </motion.div>
           </div>
@@ -428,32 +436,20 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
           transition={{ duration: 0.8 }}
         >
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--muted)] mb-4">
-            Was dich erwartet
+            {t("featLabel")}
           </div>
           <h2 className="font-display text-5xl md:text-7xl font-black leading-[0.95] tracking-tight max-w-3xl">
-            Nicht noch ein
+            {t("featHeadline1")}
             <br />
-            <span className="italic">Spielplan-Aggregator.</span>
+            <span className="italic">{t("featHeadline2")}</span>
           </h2>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8 mt-20">
           {[
-            {
-              num: "01",
-              title: "Gruppen-Grid",
-              desc: "12 Gruppen, 48 Teams, immer aktuelle Tabellen. Eine Übersicht statt zwölf Tabs.",
-            },
-            {
-              num: "02",
-              title: "Symmetrischer Bracket",
-              desc: "Der Turnierbaum, wie er sein sollte: Spiegelsymmetrie, klare Hierarchie, ab 1/4-Finale konvergent.",
-            },
-            {
-              num: "03",
-              title: "Live in deiner Zeit",
-              desc: "Anstoßzeiten automatisch in deiner Zeitzone. Kein Kopfrechnen mehr bei Spielen aus Mexiko-Stadt.",
-            },
+            { num: t("feat1Num"), title: t("feat1Title"), desc: t("feat1Desc") },
+            { num: t("feat2Num"), title: t("feat2Title"), desc: t("feat2Desc") },
+            { num: t("feat3Num"), title: t("feat3Title"), desc: t("feat3Desc") },
           ].map((f, i) => (
             <motion.div
               key={f.num}
@@ -485,24 +481,17 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
             className="mb-14"
           >
             <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--accent)] mb-3">
-              Turnierplan
+              {t("timelineLabel")}
             </div>
             <h2 className="font-display text-4xl md:text-6xl font-black leading-[0.95]">
-              11. Juni – 19. Juli 2026
+              {t("timelineTitle")}
             </h2>
           </motion.div>
 
           <div className="relative">
             <div className="hidden md:block absolute top-[22px] left-0 right-0 h-px bg-[var(--paper)]/15" />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-4">
-              {[
-                { phase: "Gruppenphase",  dates: "11.–27. Juni",     matches: 72, accent: false },
-                { phase: "Runde der 32",  dates: "28. Juni–4. Juli", matches: 16, accent: false },
-                { phase: "Achtelfinale",  dates: "5.–8. Juli",       matches: 8,  accent: false },
-                { phase: "Viertelfinale", dates: "10.–11. Juli",     matches: 4,  accent: false },
-                { phase: "Halbfinale",    dates: "14.–15. Juli",     matches: 2,  accent: false },
-                { phase: "Finale",        dates: "19. Juli",          matches: 1,  accent: true },
-              ].map((item, i) => (
+              {timelineItems.map((item, i) => (
                 <motion.div
                   key={item.phase}
                   initial={{ opacity: 0, y: 20 }}
@@ -531,7 +520,7 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                     {item.phase}
                   </div>
                   <div className="text-[11px] font-mono text-[var(--paper)]/30">
-                    {item.matches} {item.matches === 1 ? "Spiel" : "Spiele"}
+                    {item.matches} {item.matches === 1 ? t("matchSingular") : t("matchPlural")}
                   </div>
                 </motion.div>
               ))}
@@ -556,32 +545,37 @@ export default function LandingClient({ upcomingMatches }: { upcomingMatches: Up
                 wm<span className="text-[var(--accent)]">flow</span>
               </div>
               <p className="text-[var(--paper)]/40 text-sm font-mono max-w-xs">
-                FIFA World Cup 2026 · Live-Tracker für Gruppen, Spielplan &amp; Bracket.
+                {t("footerTagline")}
               </p>
             </div>
             <nav className="flex flex-wrap gap-x-8 gap-y-3">
-              {[
-                { href: "/gruppen", label: "Gruppen" },
-                { href: "/spiele",  label: "Spielplan" },
-                { href: "/bracket", label: "KO-Runden" },
-                { href: "/stadien", label: "Stadien" },
-              ].map(({ href, label }) => (
+              {(
+                [
+                  { href: "/gruppen" as const, labelKey: "nav.groups" },
+                  { href: "/spiele"  as const, labelKey: "nav.schedule" },
+                  { href: "/bracket" as const, labelKey: "nav.knockout" },
+                  { href: "/stadien" as const, labelKey: "nav.venues" },
+                ] as const
+              ).map(({ href, labelKey }) => (
                 <Link
                   key={href}
                   href={href}
                   className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--paper)]/50 hover:text-[var(--accent)] transition-colors"
                 >
-                  {label}
+                  {labelKey === "nav.groups" ? t("ctaGroups").replace(" →", "") :
+                   labelKey === "nav.schedule" ? t("ctaSchedule").replace(" →", "") :
+                   labelKey === "nav.knockout" ? "KO" :
+                   t("ctaVenues").replace(" →", "")}
                 </Link>
               ))}
             </nav>
           </div>
           <div className="h-px bg-[var(--paper)]/10 mb-8" />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[11px] font-mono text-[var(--paper)]/25">
-            <span>© {new Date().getFullYear()} wmflow · Kein offizielles FIFA-Produkt.</span>
+            <span>© {new Date().getFullYear()} wmflow · {t("copyright")}</span>
             <span className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-              USA · Kanada · Mexiko · 11. Juni – 19. Juli 2026
+              USA · Canada · Mexico · 11. Juni – 19. Juli 2026
             </span>
           </div>
         </div>

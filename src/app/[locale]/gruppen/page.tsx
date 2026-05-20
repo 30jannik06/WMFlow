@@ -1,28 +1,40 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
+import { computeBestThirds } from "@/lib/bestThirds";
 import GroupGrid from "@/components/GroupGrid";
 
-export const metadata: Metadata = {
-  title: "Gruppen — wmflow",
-  description: "Alle 12 Gruppen der FIFA WM 2026 auf einen Blick.",
-};
+type Params = Promise<{ locale: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { locale } = await params;
+  return locale === "en"
+    ? { title: "Groups — wmflow", description: "All 12 groups of the FIFA World Cup 2026 at a glance." }
+    : { title: "Gruppen — wmflow", description: "Alle 12 Gruppen der FIFA WM 2026 auf einen Blick." };
+}
 
 export const revalidate = 60;
 
-export default async function GruppenPage() {
+export default async function GruppenPage({ params }: { params: Params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations("groups");
+  const tn = await getTranslations("nav");
+
   const standings = await prisma.groupStanding.findMany({
     orderBy: [{ groupCode: "asc" }, { position: "asc" }],
     include: { team: true },
   });
 
-  const groups = standings.reduce<
-    Record<string, typeof standings>
-  >((acc, s) => {
+  const groups = standings.reduce<Record<string, typeof standings>>((acc, s) => {
     if (!acc[s.groupCode]) acc[s.groupCode] = [];
     acc[s.groupCode].push(s);
     return acc;
   }, {});
+
+  const bestThirds = computeBestThirds(standings);
 
   return (
     <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
@@ -32,42 +44,42 @@ export default async function GruppenPage() {
             href="/"
             className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors mb-6"
           >
-            ← wmflow
+            {tn("back")}
           </Link>
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--muted)] mb-3">
-            FIFA World Cup 2026
+            {t("eyebrow")}
           </div>
           <h1 className="font-display text-6xl md:text-8xl font-black leading-[0.9] tracking-tight mb-4">
-            Gruppen
+            {t("title")}
           </h1>
+          <p className="text-sm font-mono text-[var(--muted)]">{t("subtitle")}</p>
         </div>
 
-        {/* Nav pills */}
-        <div className="flex gap-3 mb-10">
+        <div className="flex flex-wrap gap-3 mb-10">
           <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--ink)] border border-[var(--ink)] px-3 py-1.5 rounded-sm">
-            Gruppen
+            {tn("groups")}
           </span>
           <Link
             href="/spiele"
             className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-3 py-1.5 rounded-sm hover:border-[var(--ink)]/50"
           >
-            Spielplan
+            {tn("schedule")}
           </Link>
           <Link
             href="/bracket"
             className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-3 py-1.5 rounded-sm hover:border-[var(--ink)]/50"
           >
-            KO-Runden
+            {tn("knockout")}
           </Link>
           <Link
             href="/stadien"
             className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors border border-[var(--ink)]/20 px-3 py-1.5 rounded-sm hover:border-[var(--ink)]/50"
           >
-            Stadien
+            {tn("venues")}
           </Link>
         </div>
 
-        <GroupGrid groups={groups} />
+        <GroupGrid groups={groups} bestThirds={[...bestThirds]} />
       </div>
     </main>
   );
